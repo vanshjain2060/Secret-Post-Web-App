@@ -1,5 +1,6 @@
 // jshint esversion : 6
-
+require("dotenv").config();
+// to use just type : process.env."variable_name" and you will get the access to the variable
 const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
@@ -13,7 +14,6 @@ app.use(bodyParser.urlencoded({extended : true}));
 
 app.use(express.static("public"));
 
-
 // // Connect to MongoDB
 const dbURI = "mongodb://localhost:27017/userDB";
 mongoose.connect(dbURI, { useNewUrlParser: true});
@@ -25,8 +25,7 @@ const userSchema = new mongoose.Schema({
 });
 
 // code which is responsible for the encryption of the data feilds
-const secret = "this is my secret which is goint to be used for the encryption process";
-userSchema.plugin(encrypt, {secret:secret , encryptedFields:["password"] });
+userSchema.plugin(encrypt, {secret : process.env.SECRET , encryptedFields:["password"] });
 
 const User = new mongoose.model("User", userSchema);
 
