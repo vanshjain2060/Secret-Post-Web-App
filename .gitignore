@@ -1,0 +1,10 @@
+*.log
+.DS_Store
+dist/
+build/
+node_modules/
+.env
+secrets.json
+*.bak
+*.tmp
+.vscode/
