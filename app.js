@@ -5,7 +5,8 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
-const md5 = require("md5");
+const bcrypt = require("bcrypt");
+const salRound = 10;
 
 const app = express();
 app.set("view engine" , "ejs");
@@ -39,45 +40,46 @@ app.get("/register" , function(req, res){
     res.render("register");
 });
 
-app.post("/register", function(req, res){
-    const newUser = new User({
-        email : req.body.username,
-        password : md5(req.body.password)
-    });
+// const bcrypt = require('bcryptjs'); // Ensure bcryptjs is required
 
-    newUser.save()
-       .then((doc) => { // Assuming doc represents the saved document
-            if (!doc ||!doc._id) {
-                return res.status(500).send("Error saving user.");
-            }
-            res.render("secrets");
-        })
-       .catch((err) => {
-            console.error(err); // Log the error for debugging purposes
-            res.status(500).send("Some Error Occured");
+app.post("/register", async function(req, res){
+    try {
+        const hashedPassword = await bcrypt.hash(req.body.password, salRound);
+
+        const newUser = new User({
+            email : req.body.username,
+            password : hashedPassword
         });
+
+        await newUser.save();
+        res.render("secrets");
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Some Error Occured");
+    }
 });
 
-app.post("/login", function(req, res){
+
+app.post("/login", async function(req, res){
     const username = req.body.username;
-    const password = md5(req.body.password);
+    const password = req.body.password; // No need to hash the password here
 
     User.findOne({email : username})
-        .then((doc) => {
+       .then(async (doc) => { // Note: added async to handle bcrypt.compare
             if (!doc ||!doc._id) {
                 return res.status(500).send("No User Found.");
             } else {
-                if(doc.password === password) {
+                // Correctly compare the plaintext password with the hashed password
+                const match = await bcrypt.compare(password, doc.password);
+                if(match) {
                     res.render("secrets");
-                }else if(doc.password !== password) {
+                } else {
                     res.send("Invalid User Name or Password");
                 }
             }
         })
-        .catch((err) =>{
-            res.status(500).send("No User Found.")
-        })
 });
+
 
 
 app.listen(3000, function() {
